@@ -35,31 +35,6 @@ typedef enum {
     ACLK_DPI_LOG_LEVEL_ALL,
 } aclk_dpi_log_level_t;
 
-#define aclk_uart_printf printf
-
-#define aclk_printf(level, fmt, arg ... )           \
-    do {                                            \
-        char *str;                                  \
-                                                    \
-        if (g_log_level >= level) {                 \
-            switch (level) {                        \
-                case ACLK_DPI_LOG_LEVEL_ERROR:      \
-                    str = "ERROR";                  \
-                    break;                          \
-                case ACLK_DPI_LOG_LEVEL_WARN:       \
-                    str = "WARN";                   \
-                    break;                          \
-                case ACLK_DPI_LOG_LEVEL_DEBUG:      \
-                    str = "DEBUG";                  \
-                    break;                          \
-                case ACLK_DPI_LOG_LEVEL_INFO:       \
-                default:                            \
-                    str = "INFO";                   \
-                    break;                          \
-            }                                       \
-            printf("[%s]"fmt, str, arg);            \
-        }                                           \
-    } while (0);
 
 #pragma pack(push)
 #pragma  pack(1)
