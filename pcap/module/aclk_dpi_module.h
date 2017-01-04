@@ -87,6 +87,8 @@ typedef enum aclk_dpi_app_no_flow {
 #endif
 
 
+void aclk_dpi_result_print();
+
 int aclk_dpi_init(void);
 
 int aclk_dpi_process_packet(void *packet);

@@ -8,9 +8,13 @@
 #ifndef __ACLK_PCAP_H__
 #define __ACLK_PCAP_H__
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ACLK_PCAP_MAGIC_NUM 0xa1b2c3d4
 
 struct time_val {
     uint32_t tv_sec;
@@ -19,7 +23,7 @@ struct time_val {
 
 typedef struct pcap_packet_header{
     struct time_val ts;
-    uint32_t capture_len;
+    uint32_t caplen;
     uint32_t len;
 } pcap_packet_header_t;
 

@@ -15,6 +15,8 @@
 #define ACLK_DPI_DATA_OFFSET        256
 #define ACLK_DPI_MAX_BUF_LEN        (ACLK_DPI_MAX_PACKET_LEN + ACLK_DPI_DATA_OFFSET)
 
+CVMX_SHARED int g_log_level;
+
 struct option g_long_opts[] = { 
     { "pcap_file", 1, NULL, 'c'},
     { "help",      0, NULL, 'h'},
@@ -40,12 +42,14 @@ int main(int argc, char *argv[])
     char *pcap_file, *progname;
     cvmx_wqe_t *wqe;
 
+
     progname = strrchr(argv[0], '/');
     if (progname) {
         ++progname;
     } else {
         progname = argv[0];
     }
+    pcap_file = NULL;
     while (1) {
         opt = getopt_long(argc, argv, "f:h", g_long_opts, 0);
         if (EOF == opt) {
@@ -60,6 +64,10 @@ int main(int argc, char *argv[])
                 usage(progname);
                 return 0;
         }
+    }
+    if (NULL == pcap_file) {
+        usage(progname);
+        return -1;
     }
 
     fp = aclk_pcap_open(pcap_file);
@@ -82,17 +90,12 @@ int main(int argc, char *argv[])
         ///process packet
         aclk_dpi_process_packet(wqe);
 
-        ///send and recv data
     } while(1);
 
     fclose(fp);
 
     ///
-    //argc = 2;
-    //argv[0] = "decap";
-    //argv[1] = "show";
-    //aclk_decap_cmd_rxstate(argc, argv);
-    //aclk_uart_printf("rx pkt sip num, count\t: %ld\n", g_sip_counter);
+    aclk_dpi_result_print();
 
     return 0;
 }

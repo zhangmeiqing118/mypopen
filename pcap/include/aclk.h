@@ -8,10 +8,6 @@
 #ifndef __ACLK_H__
 #define __ACLK_H__
 
-#include "aclk_dpi_module.h"
-#include "aclk_dpi_decap.h"
-///#include "aclk_dpi_flow.h"
-
 #ifdef  __cpulsplus
 extern "C" {
 #endif
@@ -34,6 +30,21 @@ typedef struct cvmx_wqe {
     void *packet_ptr;
     uint8_t packet_data[96];
 } cvmx_wqe_t;
+
+#ifndef CVMX_SHARED
+#define CVMX_SHARED
+#endif
+
+extern CVMX_SHARED int g_log_level;
+
+typedef enum {
+    ACLK_DPI_LOG_LEVEL_NONE,
+    ACLK_DPI_LOG_LEVEL_ERROR,
+    ACLK_DPI_LOG_LEVEL_WARN,
+    ACLK_DPI_LOG_LEVEL_INFO,
+    ACLK_DPI_LOG_LEVEL_DEBUG,
+    ACLK_DPI_LOG_LEVEL_ALL,
+} aclk_dpi_log_level_t;
 
 #define aclk_uart_printf printf
 #define aclk_printf(level, fmt, arg ... )           \
@@ -63,5 +74,15 @@ typedef struct cvmx_wqe {
 #ifdef  __cpulsplus
 }
 #endif
+
+#include "aclk_dpi_module.h"
+#include "aclk_dpi_decap.h"
+#include "aclk_dpi_flow.h"
+
+static inline int aclk_dpi_wqe_get_len(cvmx_wqe_t *packet)
+{
+    return packet->word1.len;
+}
+
 
 #endif

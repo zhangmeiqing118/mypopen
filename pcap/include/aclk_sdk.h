@@ -12,7 +12,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <getopt.h>
+
+#include <time.h>
+
+#include <arpa/inet.h>
+
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+
+#include <endian.h>
 
 #ifdef  __cpulsplus
 extern "C" {

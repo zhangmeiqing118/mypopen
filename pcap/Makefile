@@ -1,7 +1,7 @@
 ####################################################
-HOST = powerpc
+#HOST = powerpc
 #HOST = mips
-#HOST = x64
+HOST = x64
 
 ifeq ($(HOST), powerpc)
     CROSS=powerpc-linux-gnu-
@@ -17,7 +17,7 @@ STRIP = $(CROSS)strip
 OBJDUMP = $(CROSS)objdump
 NM = $(CROSS)num
 ####################################################
-TARGET:= cli
+TARGET:= dpi
 OBJ_DIR=obj$(PREFIX)
 TOP:=$(PWD)
 
@@ -32,7 +32,7 @@ CFLAGS_GLOBAL += -I$(TOP)/flow
 CFLAGS_GLOBAL += -I$(TOP)/module
 CFLAGS_GLOBAL += -I$(TOP)/pcap
 
-CFLAGS_GLOBAL += -Wall -Os
+CFLAGS_GLOBAL += -Wall -Os -D__DEBUG__
 ####################################################
 
 ####################################################
@@ -41,14 +41,14 @@ all: $(TARGET)
 dir:=$(TOP)/pcap
 include $(dir)/pcap.mk
 
-#dir:=$(TOP)/flow
-#include $(dir)/flow.mk
+dir:=$(TOP)/module
+include $(dir)/module.mk
 
 dir:=$(TOP)/decap
 include $(dir)/decap.mk
 
-dir:=$(TOP)/module
-include $(dir)/module.mk
+dir:=$(TOP)/flow
+include $(dir)/flow.mk
 
 $(OBJ_DIR):
 	mkdir $(OBJ_DIR)

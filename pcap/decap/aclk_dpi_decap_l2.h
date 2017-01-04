@@ -12,6 +12,17 @@
 extern "C" {
 #endif
 
+typedef enum aclk_dpi_proto_l2 {
+    ACLK_DPI_PROTO_ETHER = 0x01,
+} aclk_dpi_proto_l2_t;
+
+
+typedef struct ethhdr {
+    unsigned char  dst_mac[6];
+    unsigned char  src_mac[6];
+    unsigned short proto;
+} __attribute__((packed)) ethhdr_t;
+
 int aclk_dpi_decap_level_2(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint32_t len, uint16_t *offset, uint16_t *protocol);
 
 #ifdef __cplusplus

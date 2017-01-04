@@ -5,7 +5,8 @@
  * @Version : 1.0.0
  * @Date    : 12/29/2016 02:37:41 PM
  */
-#include <stdio.h>
+#include "aclk_sdk.h"
+#include "aclk_pcap.h"
 
 FILE *aclk_pcap_open(const char *filename)
 {
@@ -24,15 +25,21 @@ FILE *aclk_pcap_open(const char *filename)
         return NULL;
     }
     
+#if __BYTE_ORDER == __BIG_ENDIAN
     file_head.magic = le32toh(file_head.magic);
+#endif
+
 #ifdef __DEBUG__
+
+#if __BYTE_ORDER == __BIG_ENDIAN
     file_head.version_major = le16toh(file_head.version_major);
     file_head.version_minor = le16toh(file_head.version_minor);
     file_head.thiszone = le32toh(file_head.thiszone);
     file_head.sigfigs = le32toh(file_head.sigfigs);
     file_head.snaplen = le32toh(file_head.snaplen);
     file_head.linktype = le32toh(file_head.linktype);
-    
+#endif    
+
     printf("magic:0x%x\n", file_head.magic);
     printf("major:0x%x\n", file_head.version_major);
     printf("minor:0x%x\n", file_head.version_minor);
@@ -55,20 +62,30 @@ int aclk_pcap_read(FILE *fp, char *data, int len)
 {
     int rlen;
     pcap_packet_header_t packet_head;
+#ifdef __DEBUG__
+    time_t tv_sec;
+    struct tm *tmp;
+    char outstr[64];
+#endif
 
-    if (1 != fread(&pcap_head, sizeof(pcap_header_t), 1, fp)) {
+    if (1 != fread(&packet_head, sizeof(pcap_packet_header_t), 1, fp)) {
         printf("%s[%d]:read pcap over\n", __func__, __LINE__);
         return 0;
     }
-    rlen = le32toh(pcap_head.len);
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+    rlen = le32toh(packet_head.caplen);
+#else
+    rlen = packet_head.caplen;
+#endif
 
 #ifdef __DEBUG__
-    printf("time:%d:%d\n", pcap_head.ts.tv_sec, pcap_head.ts.tv_usec);
-    tv_sec = le32toh(pcap_head.ts.tv_sec);
+    tv_sec = le32toh(packet_head.ts.tv_sec);
+    printf("time:%d:%d\n", packet_head.ts.tv_sec, packet_head.ts.tv_usec);
     tmp = localtime(&tv_sec);
     strftime(outstr, 128, "%B %d %Y %r", tmp);
     printf("time:%s\n", outstr);
-    printf("snaplen:%u, cap len:%u\n", le32toh(pcap_head.capture_len), le32toh(pcap_head.len));
+    printf("cap len:%u\n", rlen);
 #endif
 
     if (rlen > len) {

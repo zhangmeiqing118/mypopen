@@ -8,6 +8,13 @@
 #include "aclk_sdk.h"
 #include "aclk.h"
 
+void aclk_dpi_result_print(void)
+{
+    aclk_dpi_decap_stat_print();
+
+    return;
+}
+
 #if 0
 static int g_local_core_id = 0;
 
@@ -47,17 +54,17 @@ void aclk_dpi_match_callback(void *packet)
 
 int aclk_dpi_init(void)
 {
-    if (sizeof(aclk_dpi_pkt_info_t) > sizeof((cvmx_wqe_t *(0))-> packet_data)) { ///96:the sizeof((cvmx_wqe_t *(0))-> packet_data)
+    if (sizeof(aclk_dpi_pkt_info_t) > sizeof(((cvmx_wqe_t *)(86))-> packet_data)) { ///96:the sizeof((cvmx_wqe_t *(0))-> packet_data)
         printf("%s[%d]: sizeof(aclk_dpi_pkt_info) is too big\n", __func__, __LINE__);
         return -1;
     }
     /// init decap
-    if (aclk_decap_init()) {
+    if (aclk_dpi_decap_init()) {
         printf("%s[%d]: decap module init error\n", __func__, __LINE__);
         return -1;
     }
     /// init connect
-    if (aclk_flow_init()) {
+    if (aclk_dpi_flow_init()) {
         printf("%s[%d]: flow module init error\n", __func__, __LINE__);
         return -1;
     }
@@ -74,15 +81,16 @@ int aclk_dpi_process_packet(void *packet)
     ///get packet info
     wqe = (cvmx_wqe_t *)packet;
     pkt = (aclk_dpi_pkt_info_t *)(wqe->packet_data);
+    memset(pkt, 0x00, sizeof(aclk_dpi_pkt_info_t));
    
     /// decap packet
-    if (aclk_decap_process_packet(packet)) {
+    if (aclk_dpi_decap_process_packet(packet)) {
         aclk_printf(ACLK_DPI_LOG_LEVEL_WARN, "%s[%d]: decap process packet error\n", __func__, __LINE__);
         return -1;
     }
     
     /// add packet info to session table
-    if (aclk_flow_process_packet(packet)) {
+    if (aclk_dpi_flow_process_packet(packet)) {
         aclk_printf(ACLK_DPI_LOG_LEVEL_WARN, "%s[%d]: connect process packet error\n", __func__, __LINE__);
         return -1;
     }
@@ -114,8 +122,8 @@ void aclk_dpi_process_packet_over(void *packet)
 
 void aclk_dpi_fini(void)
 {
-    aclk_flow_fini();
-    aclk_decap_fini();
+    aclk_dpi_flow_fini();
+    aclk_dpi_decap_fini();
 
     return;
 }
