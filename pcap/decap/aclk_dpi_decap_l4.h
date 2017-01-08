@@ -159,6 +159,13 @@ typedef struct gre_hdr {
     unsigned short next_proto;
 } gre_hdr_t;
 
+
+typedef struct gre_route {
+    uint16_t af;
+    uint8_t off;
+    uint8_t len;
+} gre_route_t;
+
 typedef struct ospf_hdr {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     unsigned char type:4;

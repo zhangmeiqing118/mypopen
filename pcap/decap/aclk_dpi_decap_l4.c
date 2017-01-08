@@ -233,6 +233,7 @@ static int aclk_dpi_decap_udp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t 
 static int aclk_dpi_decap_gre(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t len, uint16_t *offset, uint16_t *proto)
 {
     gre_hdr_t *gre;
+    gre_route_t *route;
 
     g_decap_stat.decap_pkt_gre++;
     ///if need decap gre ,decap here
@@ -249,6 +250,61 @@ static int aclk_dpi_decap_gre(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t 
 #ifdef __DEBUG__
     aclk_uart_printf("gre version:%d\n", gre->version);
 #endif
+        switch (gre->next_proto) {  //define in linux/if_ether.h
+        case 0x0800:
+            *proto = ACLK_DPI_PROTO_IPV4;
+            break;
+        case 0x0806://arp
+            *proto = ACLK_DPI_PROTO_ARP;
+            break;
+        case 0x8100:
+        case 0x88A8:
+        case 0x9100:
+        case 0x9200:
+        case 0x9300:
+            *proto = ACLK_DPI_PROTO_VLAN;
+            break;
+        case 0x86dd:
+            *proto = ACLK_DPI_PROTO_IPV6;
+            break;
+        case 0x8847:
+        case 0x8848:
+            *proto = ACLK_DPI_PROTO_MPLS;
+            break;
+        case 0x8864:
+        case 0x8863:
+            *proto = ACLK_DPI_PROTO_PPPOE;
+            break;
+        default:
+            return -1;
+    }    
+    
+        ///pkt->l4_proto = gre->proto;
+    *offset += sizeof(gre_hdr_t);
+    if (gre->version) {
+        ///not process gre 1;
+        return -1;
+    }
+    if (gre->chk_flag || gre->rnt_flag) {
+        *offset += 4;   ///checksum:2bytes, offset:2bytes
+    }
+    //if (gre->gre->rnt_flag) {
+    //    *offset += 8;   ///route info; 8bytes;
+    //}
+    if (gre->key_flag) {
+        *offset += 4;   ///key:4bytes
+    }
+    if (gre->seq_flag) {
+        *offset += 4;   /// seq no: 4bytes
+    }
+    if (gre->rnt_flag) {
+        do {
+            route = (gre_route_t *)(data + *offset);
+            *offset += sizeof(gre_route_t);
+            *offset += route->len;
+        } while (route->af);
+    }
+ 
 
     return 0;
 }
