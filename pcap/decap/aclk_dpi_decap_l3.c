@@ -16,7 +16,7 @@ static int aclk_dpi_decap_arp(aclk_dpi_pkt_info_t *pkt, __attribute__((unused))u
 {
     ///if need decap arp ,decap here
     pkt->appidx = ACLK_PIDE_PROTO_ARP;
-    g_decap_stat.decap_pkt_arp++;
+    g_decap_stat[g_local_core_id].decap_pkt_arp++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
     
     return 0;
@@ -27,7 +27,7 @@ static int aclk_dpi_decap_vlan(__attribute__((unused))aclk_dpi_pkt_info_t *pkt, 
     vlan_hdr_t *vlan;
     uint16_t next_proto;
 
-    g_decap_stat.decap_pkt_vlan++;
+    g_decap_stat[g_local_core_id].decap_pkt_vlan++;
 
     do {
         if (len < (sizeof(vlan_hdr_t) + *offset)) {
@@ -81,7 +81,7 @@ static int aclk_dpi_decap_mpls(__attribute__((unused))aclk_dpi_pkt_info_t *pkt, 
     mpls_hdr_t *mpls;
     ipv4_hdr_t *ipv4;
 
-    g_decap_stat.decap_pkt_mpls++;
+    g_decap_stat[g_local_core_id].decap_pkt_mpls++;
     do {
         if (len < (sizeof(mpls_hdr_t) + *offset)) {
             return -1;
@@ -109,8 +109,8 @@ static int aclk_dpi_decap_mpls(__attribute__((unused))aclk_dpi_pkt_info_t *pkt, 
 static int aclk_dpi_decap_ipv4(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t len, uint16_t *offset, uint16_t *proto)
 {
     ipv4_hdr_t *ipv4;
-    uint16_t frag_offset;
-    uint8_t more_flag;//, donot_flag;
+    ///uint16_t frag_offset;
+    ///uint8_t more_flag;//, donot_flag;
 
     if (len < (sizeof(ipv4_hdr_t) + *offset)) {
         return -1;
@@ -122,32 +122,39 @@ static int aclk_dpi_decap_ipv4(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t
     
     //ipv4 packet
     if (0 == pkt->ip_ver) {
-        g_decap_stat.decap_pkt_ipv4++;
+        g_decap_stat[g_local_core_id].decap_pkt_ipv4++;
     } else if (6 == pkt->ip_ver) {
-        g_decap_stat.decap_pkt_ipv6--;
-        g_decap_stat.decap_pkt_ipv4++;
+        g_decap_stat[g_local_core_id].decap_pkt_ipv6--;
+        g_decap_stat[g_local_core_id].decap_pkt_ipv4++;
     }
-    
+
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-    frag_offset = ntohs(ipv4->frag_offset);
+    pkt->frag_offset = (ntohs(ipv4->frag_offset) & 0x1fff ) << 3;
+    pkt->frag_more = (ntohs(ipv4->frag_offset) & 0x2000) >> 13;
 #else
-    frag_offset = ipv4->frag_offset;
+    pkt->frag_offset = (ipv4->frag_offset & 0x1fff ) << 3;
+    pkt->frag_more = (ipv4->frag_offset & 0x2000) >> 13;
 #endif
-    more_flag = (frag_offset >> 13) & 0x01;
-    frag_offset = frag_offset & 0x1ff;
-    
-    ///printf("ver:%d, hdr len:%d, ipv4->frag_offset:%d\n", ipv4->version, ipv4->hdr_len, frag_offset);
-    ///printf("more:%d\n", more_flag);
-    if (more_flag || frag_offset) {//ip fragment
-        *proto = ACLK_DPI_PROTO_FRAG;
-        return 0;
-    }
-    
+    pkt->id = ipv4->id;
+
+
     pkt->ip_ver = 4;
     pkt->l4_proto = ipv4->protocol;
     pkt->sip.ipv4= ipv4->src_ip;
     pkt->dip.ipv4 = ipv4->dst_ip;
     *offset = *offset + (ipv4->hdr_len << 2);
+    printf("ver:%d, ipv4->frag_offset:%d, pkt offset:%d\n", pkt->ip_ver, ipv4->frag_offset, pkt->frag_offset);
+    printf("more:%d\n", pkt->frag_more);
+
+    if (pkt->frag_offset) {//ip fragment
+        *proto = ACLK_DPI_PROTO_FRAG;
+        return 0;
+    }
+    if (pkt->frag_more) {
+        g_decap_stat[g_local_core_id].decap_pkt_frag++;
+        pkt->appidx = ACLK_PIDE_PROTO_FRAG;
+    }
+
     ////printf("decp ipv4 protocol:%d, len:%d\n", ipv4->protocol, ipv4->hdr_len);
     switch (pkt->l4_proto) {
         case 0x01:///next is icmp
@@ -212,10 +219,10 @@ static int aclk_dpi_decap_ipv6(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t
     ///printf("version:%d\n", version);
     //ipv6 packet
     if (0 == pkt->ip_ver) {
-        g_decap_stat.decap_pkt_ipv6++;
+        g_decap_stat[g_local_core_id].decap_pkt_ipv6++;
     } else if (4 == pkt->ip_ver) {
-        g_decap_stat.decap_pkt_ipv4--;
-        g_decap_stat.decap_pkt_ipv6++;
+        g_decap_stat[g_local_core_id].decap_pkt_ipv4--;
+        g_decap_stat[g_local_core_id].decap_pkt_ipv6++;
     }
 
     pkt->ip_ver = 6;
@@ -292,7 +299,7 @@ static int aclk_dpi_decap_pppoe(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_
         }
     }
     pkt->appidx = ACLK_PIDE_PROTO_PPPOE;
-    g_decap_stat.decap_pkt_pppoe++;
+    g_decap_stat[g_local_core_id].decap_pkt_pppoe++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
 
     return 0;
@@ -302,7 +309,7 @@ static int aclk_dpi_decap_pppoe(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_
 static int aclk_dpi_decap_ppp(aclk_dpi_pkt_info_t *pkt, __attribute__((unused))uint8_t *data, __attribute__((unused))uint16_t len, __attribute__((unused))uint16_t *offset, uint16_t *proto)
 {
     pkt->appidx = ACLK_PIDE_PROTO_PPP;
-    g_decap_stat.decap_pkt_ppp++;
+    g_decap_stat[g_local_core_id].decap_pkt_ppp++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
 
     return 0;
@@ -316,43 +323,43 @@ int aclk_dpi_decap_level_3(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint32_t len
         case ACLK_DPI_PROTO_ARP:
             recode = aclk_dpi_decap_arp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_VLAN:
             recode = aclk_dpi_decap_vlan(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_MPLS:
             recode = aclk_dpi_decap_mpls(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_IPV4:
             recode = aclk_dpi_decap_ipv4(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_IPV6:
             recode = aclk_dpi_decap_ipv6(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_PPPOE:
             recode = aclk_dpi_decap_pppoe(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_PPP:
             recode = aclk_dpi_decap_ppp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         default:

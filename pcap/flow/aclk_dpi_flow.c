@@ -8,7 +8,7 @@
 #include "aclk_sdk.h"
 #include "aclk.h"
 
-int aclk_dpi_flow_init(void)
+int aclk_dpi_flow_init_global(void)
 {
     return 0;
 }
@@ -18,7 +18,7 @@ int aclk_dpi_flow_process_packet(cvmx_wqe_t *packet)
     return 0;
 }
 
-void aclk_dpi_flow_fini(void)
+void aclk_dpi_flow_fini_global(void)
 {
     return;
 }

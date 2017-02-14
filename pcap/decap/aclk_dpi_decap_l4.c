@@ -11,7 +11,6 @@
 #include "aclk_dpi_decap_l3.h"
 #include "aclk_dpi_decap_l4.h"
 
-
 ////identity by l4 protocol
 static int aclk_dpi_decap_icmp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t len, uint16_t *offset, uint16_t *proto)
 {
@@ -21,7 +20,7 @@ static int aclk_dpi_decap_icmp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t
 
     ///icmp don't need match more
     pkt->appidx = ACLK_PIDE_PROTO_ICMP;
-    g_decap_stat.decap_pkt_icmp++;
+    g_decap_stat[g_local_core_id].decap_pkt_icmp++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
 
     if (len < (sizeof(icmp_hdr_t) + *offset)) {
@@ -30,7 +29,7 @@ static int aclk_dpi_decap_icmp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t
     icmp = (icmp_hdr_t *)(data + *offset);
 
 #ifdef __DEBUG__
-    aclk_uart_printf("icmp type:%d, code\n", icmp->type, icmp->code);
+    aclk_uart_printf("icmp type:%d, code :%d\n", icmp->type, icmp->code);
 #endif
     
     return 0;
@@ -44,7 +43,7 @@ static int aclk_dpi_decap_igmp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t
 
     ///igmp don't need match more
     pkt->appidx = ACLK_PIDE_PROTO_IGMP;
-    g_decap_stat.decap_pkt_igmp++;
+    g_decap_stat[g_local_core_id].decap_pkt_igmp++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
     if (len < (sizeof(igmp_hdr_t) + *offset)) {
         return -1;
@@ -63,10 +62,10 @@ static int aclk_dpi_decap_tcp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t 
     tcp_hdr_t *tcp;
     
     if (0 == pkt->sport) {
-        g_decap_stat.decap_pkt_tcp++;
+        g_decap_stat[g_local_core_id].decap_pkt_tcp++;
     } else if ((0x11 == pkt->l4_proto) && (pkt->sport)) {
-        g_decap_stat.decap_pkt_udp--;
-        g_decap_stat.decap_pkt_tcp++;
+        g_decap_stat[g_local_core_id].decap_pkt_udp--;
+        g_decap_stat[g_local_core_id].decap_pkt_tcp++;
     }
 
     if (len < (sizeof(tcp_hdr_t) + *offset)) {
@@ -131,10 +130,10 @@ static int aclk_dpi_decap_udp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t 
     udp_hdr_t *udp;
    
     if (0 == pkt->sport) {
-        g_decap_stat.decap_pkt_udp++;
+        g_decap_stat[g_local_core_id].decap_pkt_udp++;
     } else if ((0x06 == pkt->l4_proto) && (pkt->sport)) {
-        g_decap_stat.decap_pkt_tcp--;
-        g_decap_stat.decap_pkt_udp++;
+        g_decap_stat[g_local_core_id].decap_pkt_tcp--;
+        g_decap_stat[g_local_core_id].decap_pkt_udp++;
     }
 
     if (len < (sizeof(udp_hdr_t) + *offset)) {
@@ -192,6 +191,9 @@ static int aclk_dpi_decap_udp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t 
         case ACLK_DPI_OPENVPN_PORT:
             *proto = ACLK_DPI_PROTO_OPENVPN;
             break;
+        case ACLK_DPI_TEREDO_PORT:
+            *proto = ACLK_DPI_PROTO_TEREDO;
+            break;
         default:
             flag = 1;
             break;
@@ -217,6 +219,9 @@ static int aclk_dpi_decap_udp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t 
             case ACLK_DPI_OPENVPN_PORT:
                 *proto = ACLK_DPI_PROTO_OPENVPN;
                 break;
+            case ACLK_DPI_TEREDO_PORT:
+                *proto = ACLK_DPI_PROTO_TEREDO;
+                break;
             default:
                 flag = 1;
                 break;
@@ -235,7 +240,7 @@ static int aclk_dpi_decap_gre(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t 
     gre_hdr_t *gre;
     gre_route_t *route;
 
-    g_decap_stat.decap_pkt_gre++;
+    g_decap_stat[g_local_core_id].decap_pkt_gre++;
     ///if need decap gre ,decap here
 
     ///gre don't need match more
@@ -317,7 +322,7 @@ static int aclk_dpi_decap_ipsec_esp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uin
     ///ipsec esp don't need match more
     pkt->appidx = ACLK_PIDE_PROTO_IPSEC_ESP;
 
-    g_decap_stat.decap_pkt_ipsec_esp++;
+    g_decap_stat[g_local_core_id].decap_pkt_ipsec_esp++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
 
     if (len < (sizeof(ipv6_ext_hdr_esp_t) + *offset)) {
@@ -390,7 +395,7 @@ static int aclk_dpi_decap_ospf(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t
     ///ospf don't need match more
     pkt->appidx = ACLK_PIDE_PROTO_OSPF;
 
-    g_decap_stat.decap_pkt_ospf++;
+    g_decap_stat[g_local_core_id].decap_pkt_ospf++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
 
     if (len < (sizeof(ospf_hdr_t) + *offset)) {
@@ -411,7 +416,7 @@ static int aclk_dpi_decap_sctp(__attribute__((unused))aclk_dpi_pkt_info_t *pkt, 
     sctp_data_t *sctp_data;
     uint32_t next_proto;
 
-    g_decap_stat.decap_pkt_sctp++;
+    g_decap_stat[g_local_core_id].decap_pkt_sctp++;
     if (len < (sizeof(sctp_hdr_t) + *offset)) {
         return -1;
     }
@@ -455,7 +460,7 @@ static int aclk_dpi_decap_frag(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t
 {
     ipv6_frag_t *frag;
 
-    g_decap_stat.decap_pkt_frag++; 
+    g_decap_stat[g_local_core_id].decap_pkt_frag++; 
     if (4 == pkt->ip_ver) {
         pkt->appidx = ACLK_PIDE_PROTO_FRAG;
         ///for gre packet, process over
@@ -467,7 +472,23 @@ static int aclk_dpi_decap_frag(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t
         }
 
         frag = (ipv6_frag_t *)(data + *offset);
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+        pkt->frag_offset = ntohs(frag->offset) >> 3;
+        pkt->frag_more = ntohs(frag->offset) & 0x01;
+#else
+        pkt->frag_offset = frag->offset >> 3;
+        pkt->frag_more = frag->offset & 0x01;
+#endif
+        pkt->id = frag->id;
         *offset += sizeof(ipv6_frag_t);
+        printf("frag offset:%d, more:%d\n", pkt->frag_offset , pkt->frag_more);
+
+        if (pkt->frag_offset) {
+            pkt->appidx = ACLK_PIDE_PROTO_FRAG;
+            *proto = ACLK_DPI_PROTO_PAYLOAD;
+            return 0;
+        }
+
         switch (frag->next_proto) {
             case 0x3a:  ///next is icmpv6
                 *proto = ACLK_DPI_PROTO_ICMP;
@@ -515,7 +536,7 @@ static int aclk_dpi_decap_pptp(aclk_dpi_pkt_info_t *pkt, __attribute__((unused))
     ///pptp don't need match more
     pkt->appidx = ACLK_PIDE_PROTO_PPTP;
 
-    g_decap_stat.decap_pkt_pptp++;
+    g_decap_stat[g_local_core_id].decap_pkt_pptp++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
     
     return 0;
@@ -529,7 +550,7 @@ static int aclk_dpi_decap_dhcp(aclk_dpi_pkt_info_t *pkt, __attribute__((unused))
     ///dhcp don't need match more
     pkt->appidx = ACLK_PIDE_PROTO_DHCP;
 
-    g_decap_stat.decap_pkt_dhcp++;
+    g_decap_stat[g_local_core_id].decap_pkt_dhcp++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
     
     return 0;
@@ -542,7 +563,7 @@ static int aclk_dpi_decap_rip(aclk_dpi_pkt_info_t *pkt, __attribute__((unused))u
     ///rip don't need match more
     pkt->appidx = ACLK_PIDE_PROTO_RIP;
 
-    g_decap_stat.decap_pkt_rip++;
+    g_decap_stat[g_local_core_id].decap_pkt_rip++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
     
     return 0;
@@ -559,7 +580,7 @@ static int aclk_dpi_decap_gtp(__attribute__((unused))aclk_dpi_pkt_info_t *pkt, u
 
     gtp = (gtp_r99_hdr_t *)(data + *offset);
     if (0xff == gtp->message_type) {///gtp data
-        g_decap_stat.decap_pkt_gtp_data++;                      
+        g_decap_stat[g_local_core_id].decap_pkt_gtp_data++;                      
         if ((0 == gtp->exhdr_flag) && (0 == gtp->seq_flag) && (0 == gtp->npdu_flag)) {
             *offset += sizeof(gtp_r99_hdr_t);
         } else {           
@@ -580,7 +601,7 @@ static int aclk_dpi_decap_gtp(__attribute__((unused))aclk_dpi_pkt_info_t *pkt, u
         ///printf("invalid type:%d, len:%d\n", ipv4->version, ipv4->header_length);
     } else {
         //gtp_sig
-        g_decap_stat.decap_pkt_gtp_ctrl++;                      
+        g_decap_stat[g_local_core_id].decap_pkt_gtp_ctrl++;                      
         
         return -1;
     }
@@ -601,9 +622,9 @@ static int aclk_dpi_decap_l2tp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t
 
     l2tp = (l2tp_hdr_t *)(data + *offset);
     if (0 == l2tp->msg_type) {
-        g_decap_stat.decap_pkt_l2tp_data++;
+        g_decap_stat[g_local_core_id].decap_pkt_l2tp_data++;
     } else {
-        g_decap_stat.decap_pkt_l2tp_ctrl++;
+        g_decap_stat[g_local_core_id].decap_pkt_l2tp_ctrl++;
     }
 
     //pkt->dport = M_L2TP_PROTOCOL;
@@ -623,10 +644,10 @@ static int aclk_dpi_decap_l2tp(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint16_t
     //        //pkt->l4_proto = M_L2TP_PROTOCOL;
     //    }
 
-    //    g_decap_stat.decap_pkt_l2tp_data_num++;
+    //    g_decap_stat[g_local_core_id].decap_pkt_l2tp_data_num++;
     //} else {
     //    //l2tp ctrl
-    //    g_decap_stat.decap_pkt_l2tp_ctrl_num++;
+    //    g_decap_stat[g_local_core_id].decap_pkt_l2tp_ctrl_num++;
     //    aclk_dpi_process_packet_over(packet);
     //    return -1;
     //}
@@ -641,8 +662,38 @@ static int aclk_dpi_decap_openvpn(aclk_dpi_pkt_info_t *pkt, __attribute__((unuse
     ///openvpn don't need match more
     pkt->appidx = ACLK_PIDE_PROTO_OPENVPN;
 
-    g_decap_stat.decap_pkt_openvpn++;
+    g_decap_stat[g_local_core_id].decap_pkt_openvpn++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
+    
+    return 0;
+}
+
+static int aclk_dpi_decap_teredo(aclk_dpi_pkt_info_t *pkt, __attribute__((unused))uint8_t *data, __attribute__((unused))uint16_t len, __attribute__((unused))uint16_t *offset, uint16_t *proto)
+{
+    uint8_t ip_ver;
+
+    printf("decap teredo\n");
+    ip_ver = *((uint8_t *)(data + *offset));
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+    ip_ver = ip_ver >> 4;
+#else
+    ip_ver = ip_ver & 0xf;
+#endif
+    printf("ip ver:%d\n", ip_ver);
+    if (ip_ver == 4) {
+        *proto = ACLK_DPI_PROTO_IPV4;
+    } else if (ip_ver == 6) {
+        *proto = ACLK_DPI_PROTO_IPV6;
+    } else {
+        return -1;
+    }
+
+    g_decap_stat[g_local_core_id].decap_pkt_teredo++;
+
+    ///teredo don't need match more
+    //pkt->appidx = ACLK_PIDE_PROTO_TEREDO;
+
+    //g_decap_stat[g_local_core_id].decap_pkt_teredo++;
     
     return 0;
 }
@@ -654,7 +705,7 @@ static int aclk_dpi_decap_s1ap(aclk_dpi_pkt_info_t *pkt, __attribute__((unused))
     ///s1ap don't need match more
     pkt->appidx = ACLK_PIDE_PROTO_S1AP;
 
-    g_decap_stat.decap_pkt_s1ap++;
+    g_decap_stat[g_local_core_id].decap_pkt_s1ap++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
     
     return 0;
@@ -667,7 +718,7 @@ static int aclk_dpi_decap_s6a(aclk_dpi_pkt_info_t *pkt, __attribute__((unused))u
     ///s6a don't need match more
     pkt->appidx = ACLK_PIDE_PROTO_S6A;
 
-    g_decap_stat.decap_pkt_s6a++;
+    g_decap_stat[g_local_core_id].decap_pkt_s6a++;
     *proto = ACLK_DPI_PROTO_PAYLOAD;
     
     return 0;
@@ -682,115 +733,121 @@ int aclk_dpi_decap_level_4(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint32_t len
         case ACLK_DPI_PROTO_ICMP:
             recode = aclk_dpi_decap_icmp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_IGMP:
             recode = aclk_dpi_decap_igmp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_TCP:
             recode = aclk_dpi_decap_tcp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_UDP:
             recode = aclk_dpi_decap_udp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_GRE:
             recode = aclk_dpi_decap_gre(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_IPSEC_ESP:
             recode = aclk_dpi_decap_ipsec_esp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_IPSEC_AH:
             recode = aclk_dpi_decap_ipsec_ah(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_OSPF:
             recode = aclk_dpi_decap_ospf(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_SCTP:
             recode = aclk_dpi_decap_sctp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_FRAG:
             recode = aclk_dpi_decap_frag(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
 
         case ACLK_DPI_PROTO_PPTP:
             recode = aclk_dpi_decap_pptp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
 
         case ACLK_DPI_PROTO_DHCP:
             recode = aclk_dpi_decap_dhcp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_RIP:
             recode = aclk_dpi_decap_rip(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_GTP:
             recode = aclk_dpi_decap_gtp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_L2TP:
             recode = aclk_dpi_decap_l2tp(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_OPENVPN:
             recode = aclk_dpi_decap_openvpn(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
+            }
+            break;
+        case ACLK_DPI_PROTO_TEREDO:
+            recode = aclk_dpi_decap_teredo(pkt, data, len, offset, protocol);
+            if (recode) {
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_S1AP:
             recode = aclk_dpi_decap_s1ap(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         case ACLK_DPI_PROTO_S6A:
             recode = aclk_dpi_decap_s6a(pkt, data, len, offset, protocol);
             if (recode) {
-                g_decap_stat.decap_pkt_err++;
+                g_decap_stat[g_local_core_id].decap_pkt_err++;
             }
             break;
         default:
-            g_decap_stat.decap_pkt_err++;                      
+            g_decap_stat[g_local_core_id].decap_pkt_err++;                      
             recode = -1;
             break;
     }

@@ -16,6 +16,7 @@
 #define ACLK_DPI_MAX_BUF_LEN        (ACLK_DPI_MAX_PACKET_LEN + ACLK_DPI_DATA_OFFSET)
 
 CVMX_SHARED int g_log_level;
+int g_local_core_id;
 
 struct option g_long_opts[] = { 
     { "pcap_file", 1, NULL, 'c'},
@@ -76,9 +77,9 @@ int main(int argc, char *argv[])
     }
 
     wqe = (cvmx_wqe_t *)sdata;
-    wqe->packet_ptr = sdata + ACLK_DPI_DATA_OFFSET;
+    wqe->packet_ptr.s.addr = (uint64_t )(sdata + ACLK_DPI_DATA_OFFSET);
     do {
-        ssize = aclk_pcap_read(fp, wqe->packet_ptr, ACLK_DPI_MAX_PACKET_LEN);
+        ssize = aclk_pcap_read(fp, sdata + ACLK_DPI_DATA_OFFSET, ACLK_DPI_MAX_PACKET_LEN);
         if (0 == ssize) {
             break;
         } else if (-1 == ssize) {

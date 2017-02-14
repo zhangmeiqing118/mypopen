@@ -38,14 +38,18 @@ typedef struct aclk_dpi_pkt_info {
     uint64_t     flow_dir:2;
     uint64_t     tcp_flag:4;
     uint64_t     ip_ver:4;
-    uint64_t     reserve1:54;
+    uint64_t    frag_more:1;
+    uint64_t    frag_offset:13;
+    uint64_t    id:32;     ///frag identify
+    uint64_t    reserve1:8;
+
 
     ///word 6
     uint16_t    payload_offset; 
     uint16_t    payload_len;  
     uint32_t    appidx;
+
     ///word 7
-    uint32_t    flow_hash;
 
     ///word 8
     void *flow;

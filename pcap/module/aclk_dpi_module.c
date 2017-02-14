@@ -8,9 +8,25 @@
 #include "aclk_sdk.h"
 #include "aclk.h"
 
+char *argv[4];
+
 void aclk_dpi_result_print(void)
 {
-    aclk_dpi_decap_stat_print();
+    int argc;
+
+    argc = 0;
+    ///memset(argv[argc], 0x00, sizeof(argv[argc]));
+    ///strcpy(argv[argc], "decap");
+    argv[argc] = "decap";
+    argc++;
+    ///memset(argv[argc], 0x00, sizeof(argv[argc]));
+    ///strcpy(argv[argc], "show");
+    argv[argc] = "show";
+    argc++;
+
+    printf("argv[0]:%s, argv[1]:%s\n", argv[0], argv[1]);
+    aclk_dpi_decap_stat(argc, argv);
+    ///aclk_dpi_decap_stat(argc, (char **)argv);
 
     return;
 }
@@ -59,12 +75,12 @@ int aclk_dpi_init(void)
         return -1;
     }
     /// init decap
-    if (aclk_dpi_decap_init()) {
+    if (aclk_dpi_decap_init_global()) {
         printf("%s[%d]: decap module init error\n", __func__, __LINE__);
         return -1;
     }
     /// init connect
-    if (aclk_dpi_flow_init()) {
+    if (aclk_dpi_flow_init_global()) {
         printf("%s[%d]: flow module init error\n", __func__, __LINE__);
         return -1;
     }
@@ -122,8 +138,8 @@ void aclk_dpi_process_packet_over(void *packet)
 
 void aclk_dpi_fini(void)
 {
-    aclk_dpi_flow_fini();
-    aclk_dpi_decap_fini();
+    aclk_dpi_flow_fini_global();
+    aclk_dpi_decap_fini_global();
 
     return;
 }

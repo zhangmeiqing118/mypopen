@@ -12,11 +12,11 @@
 extern "C" {
 #endif
 
-int aclk_dpi_flow_init(void);
+int aclk_dpi_flow_init_global(void);
 
 int aclk_dpi_flow_process_packet(cvmx_wqe_t *packet);
 
-void aclk_dpi_flow_fini(void);
+void aclk_dpi_flow_fini_global(void);
 
 #ifdef __cplusplus
 }

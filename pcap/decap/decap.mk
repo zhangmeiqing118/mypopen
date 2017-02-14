@@ -7,25 +7,15 @@ d               :=  $(dir)
 
 LIBRARY_DECAP := $(OBJ_DIR)/libdecap.a
 
-#DECAP_FILES=`ls $d`
-#define list_decap_file
-#@for file in $(DECAP_FILES);							\
-#	do 												\
-#	( echo "$(CC) -c $$file" && $(CC) -c $$file ) 	\
-#	done;
-#endef
-#
-#%.o: %.c
-#	$(call compile_c_file)
-
-LIBDECAP_OBJ_$(d)  :=$(patsubst $(d)/%.c, $(OBJ_DIR)/%.o, $(wildcard $(d)/*.c)) 
-
+LIBDECAP_OBJ_$(d)  := $(patsubst $(d)/%.c, $(OBJ_DIR)/%.o, $(wildcard $(d)/*.c)) 
 #LIBDECAP_OBJ_$(d)  :=  \
-	$(OBJ_DIR)/test0.o
+#	$(OBJ_DIR)/aclk_dpi_module.o	\
+#	$(OBJ_DIR)/aclk_dpi_decap.o		\
+#	$(OBJ_DIR)/aclk_dpi_connect.o	\
+#	$(OBJ_DIR)/aclk_dpi_command.o
 
 
-$(LIBDECAP_OBJ_$(d)):  CFLAGS_LOCAL := -I$(d) -O2 -g -W -Wall 
-	#-Werror -Wundef -Wno-unused-parameter -Wundef
+$(LIBDECAP_OBJ_$(d)):  CFLAGS_LOCAL := -I$(d) -O2 -g -W -Wall -Werror -Wundef -Wno-unused-parameter -Wundef #-G0
 
 #  standard component Makefile rules
 

@@ -1,7 +1,7 @@
 ####################################################
-#HOST = powerpc
+HOST = powerpc
 #HOST = mips
-HOST = x64
+#HOST = x64
 
 ifeq ($(HOST), powerpc)
     CROSS=powerpc-linux-gnu-

@@ -23,11 +23,27 @@ typedef struct cvmx_wqe_word1 {
     uint64_t tag:32;
 } cvmx_wqe_word1_t;
 
+typedef union cvmx_buf_ptr {
+    void *ptr;
+    uint64_t u64;
+    struct {
+#ifdef __OCTEON_SDK__
+        uint64_t i:1;
+        uint64_t back:4;
+        uint64_t pool:3;
+        uint64_t size:16;
+        uint64_t addr:40;
+#else
+        void *addr;
+#endif
+    } s;
+} cvmx_buf_ptr_t;
+
 typedef struct cvmx_wqe {
     uint64_t word0;
     cvmx_wqe_word1_t word1;
     uint64_t word2;
-    void *packet_ptr;
+    cvmx_buf_ptr_t packet_ptr;
     uint8_t packet_data[96];
 } cvmx_wqe_t;
 
@@ -75,14 +91,22 @@ typedef enum {
 }
 #endif
 
+#define MAX_CORES   4
+
 #include "aclk_dpi_module.h"
 #include "aclk_dpi_decap.h"
 #include "aclk_dpi_flow.h"
 
-static inline int aclk_dpi_wqe_get_len(cvmx_wqe_t *packet)
+extern int g_local_core_id;
+
+static inline int cvmx_wqe_get_len(cvmx_wqe_t *packet)
 {
     return packet->word1.len;
 }
 
+static inline void *cvmx_phys_to_ptr(void *address)
+{
+    return (void *)address;
+}
 
 #endif

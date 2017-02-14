@@ -75,7 +75,7 @@ int aclk_dpi_decap_level_2(aclk_dpi_pkt_info_t *pkt, uint8_t *data, uint32_t len
 
     recode =  aclk_dpi_decap_ether(pkt, data, len, offset, protocol);
     if (recode) {
-        g_decap_stat.decap_pkt_err++;
+        g_decap_stat[g_local_core_id].decap_pkt_err++;
     }
 
     return recode;

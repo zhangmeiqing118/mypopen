@@ -27,6 +27,7 @@ extern "C" {
 #define ACLK_DPI_GTP_PORT1      0x0868
 #define ACLK_DPI_L2TP_PORT      0x06a5
 #define ACLK_DPI_OPENVPN_PORT   0x04aa
+#define ACLK_DPI_TEREDO_PORT    0x0dd8
 
 ///osi level
 typedef enum aclk_decap_level {
@@ -64,6 +65,48 @@ typedef enum aclk_dpi_app_id {
     ACLK_PIDE_PROTO_INIT,
 } aclk_dpi_app_id_t;
 
+typedef struct tcp_hdr {
+    unsigned short	src_port;
+    unsigned short	dst_port;
+    unsigned int	seqno;						
+    unsigned int	ackno;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+    unsigned char  res1:4;
+    unsigned char  hdr_len:4;
+    union {
+        unsigned char  tcp_flag;
+        struct {
+            unsigned char  fin:1;
+            unsigned char  syn:1;
+            unsigned char  rst:1;
+            unsigned char  psh:1;
+            unsigned char  ack:1;
+            unsigned char  urg:1;
+            unsigned char  echo:1;
+            unsigned char  cwr:1;
+        } s;
+    } flag;
+#else
+    unsigned char  hdr_len:4;
+    unsigned char  res1:4;
+    union {
+        uint16_t tcp_flag;
+        struct {
+            unsigned char  cwr:1;
+            unsigned char  echo:1;
+            unsigned char  urg:1;
+            unsigned char  ack:1;
+            unsigned char  psh:1;
+            unsigned char  rst:1;
+            unsigned char  syn:1;
+            unsigned char  fin:1;
+        }s;
+    } flag;
+#endif
+    unsigned short 	window;
+    unsigned short 	checksum;
+    unsigned short 	urgent;
+} tcp_hdr_t;
 
 typedef struct aclk_dpi_decap_stat {
     uint64_t decap_pkt_num;
@@ -99,20 +142,26 @@ typedef struct aclk_dpi_decap_stat {
     uint64_t decap_pkt_l2tp_ctrl;
     uint64_t decap_pkt_l2tp_data;
     uint64_t decap_pkt_openvpn;
+    uint64_t decap_pkt_teredo;
     uint64_t decap_pkt_s1ap;
     uint64_t decap_pkt_s6a;
 } aclk_dpi_decap_stat_t;
 
-extern CVMX_SHARED aclk_dpi_decap_stat_t g_decap_stat;
+extern CVMX_SHARED aclk_dpi_decap_stat_t g_decap_stat[MAX_CORES];
+
 ///function define
+void aclk_dpi_decap_stat(int argc, char *argv[]);
 
-void aclk_dpi_decap_stat_print(void);
-
-int aclk_dpi_decap_init(void);
+int aclk_dpi_decap_init_local(void);
+int aclk_dpi_decap_init_global(void);
 
 int aclk_dpi_decap_process_packet(cvmx_wqe_t *packet);
+int aclk_dpi_decap_process_command(void *packet, void *data);
 
-void aclk_dpi_decap_show(int argc, char *argv[]);
+void aclk_dpi_decap_fini_local(void);
+void aclk_dpi_decap_fini_global(void);
+
+///void aclk_dpi_decap_show(int argc, char *argv[]);
 
 #ifdef  __cpulsplus
 }

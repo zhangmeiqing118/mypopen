@@ -28,6 +28,7 @@ typedef enum aclk_dpi_proto_l4 {
     ACLK_DPI_PROTO_L2TP,
     ACLK_DPI_PROTO_PPTP,
     ACLK_DPI_PROTO_OPENVPN,
+    ACLK_DPI_PROTO_TEREDO,
     ACLK_DPI_PROTO_FRAG,
     ACLK_DPI_PROTO_SCTP,
     ACLK_DPI_PROTO_S1AP,
@@ -55,48 +56,6 @@ typedef struct igmp_hdr {
     unsigned int group;
 } igmp_hdr_t;
 
-typedef struct tcp_hdr {
-    unsigned short	src_port;
-    unsigned short	dst_port;
-    unsigned int	seqno;						
-    unsigned int	ackno;
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-    unsigned char  res1:4;
-    unsigned char  hdr_len:4;
-    union {
-        unsigned char  tcp_flag;
-        struct {
-            unsigned char  fin:1;
-            unsigned char  syn:1;
-            unsigned char  rst:1;
-            unsigned char  psh:1;
-            unsigned char  ack:1;
-            unsigned char  urg:1;
-            unsigned char  echo:1;
-            unsigned char  cwr:1;
-        } s;
-    } flag;
-#else
-    unsigned char  hdr_len:4;
-    unsigned char  res1:4;
-    union {
-        uint16_t tcp_flag;
-        struct {
-            unsigned char  cwr:1;
-            unsigned char  echo:1;
-            unsigned char  urg:1;
-            unsigned char  ack:1;
-            unsigned char  psh:1;
-            unsigned char  rst:1;
-            unsigned char  syn:1;
-            unsigned char  fin:1;
-        }s;
-    } flag;
-#endif
-    unsigned short 	window;
-    unsigned short 	checksum;
-    unsigned short 	urgent;
-} tcp_hdr_t;
 
 typedef struct udp_hdr {
     unsigned short src_port;
@@ -121,15 +80,8 @@ typedef struct ipv6_ext_hdr_ah {
 typedef struct ipv6_frag {
     uint8_t next_proto;
     uint8_t res1;
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-    uint16_t more:1;
-    uint16_t res2:2;
-    uint16_t offset:13;
-#else
-    uint16_t offset:13;
-    uint16_t res2:2;
-    uint16_t more:1;
-#endif
+    uint16_t offset;
+    uint32_t id;
 } ipv6_frag_t;
 
 typedef struct gre_hdr {
