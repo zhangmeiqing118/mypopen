@@ -90,7 +90,7 @@ typedef struct tcp_hdr {
     unsigned char  hdr_len:4;
     unsigned char  res1:4;
     union {
-        uint16_t tcp_flag;
+        uint8_t tcp_flag;
         struct {
             unsigned char  cwr:1;
             unsigned char  echo:1;
