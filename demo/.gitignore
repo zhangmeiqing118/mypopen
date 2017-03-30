@@ -1,0 +1,8 @@
+*.o
+*.d
+test
+demo
+obj
+psend
+tags
+.vscode

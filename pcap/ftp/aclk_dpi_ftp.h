@@ -13,6 +13,13 @@
 extern "C" {
 #endif
 
+#define ACLK_PIDE_MAX_FTP_RULE_NUM      4096
+
+typedef struct {
+    uint64_t cycles;
+    uint16_t port;
+} aclk_pide_ftp_rule_t;
+
 extern CVMX_SHARED int g_rule_ftp_appidx;
 
 ///function define
@@ -22,6 +29,7 @@ int aclk_dpi_ftp_init_local(void);
 int aclk_dpi_ftp_init_global(void);
 
 int aclk_dpi_ftp_process_packet(cvmx_wqe_t *packet);
+int aclk_dpi_ftp_packet_analysis(cvmx_wqe_t *packet);
 int aclk_dpi_ftp_process_command(void *packet, void *data);
 
 void aclk_dpi_ftp_fini_local(void);
