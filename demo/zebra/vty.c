@@ -16,11 +16,12 @@
 #include <arpa/inet.h>
 #include <arpa/telnet.h>
 
+#include "vector.h"
 #include "vty.h"
 #include "buffer.h"
 #include "command.h"
 
-extern char *default_motd;
+///extern char *default_motd;
 int g_vty_timeout_val = 5;
 
 int vty_out(struct vty *vty, const char *format, ...)
@@ -119,16 +120,12 @@ static int vty_ensure(struct vty *vty, int length)
 
 void vty_hello(struct vty *vty)
 {
-    vty_out(vty, default_motd);
+    vty_out(vty, DEFAULT_MOTD);
 }
 
 static void vty_prompt(struct vty *vty)
 {
-	///struct utsname names;
-
-    ///uname(&names);
-    vty_out(vty, "accelink>");
-    ///vty_out(vty, "%s", names.nodename);
+    vty_out(vty, cmd_prompt(vty->node));
 
     return;
 }
@@ -554,18 +551,91 @@ static void vty_hist_add(struct vty *vty)
     return ;
 }
 
+static int vty_auth (struct vty *vty, char *buf)
+{
+    char *passwd;
+    int next_node, recode, pri;
+
+    switch (vty->node) {
+        case AUTH_NODE:
+            passwd = "admin";//vty_passwd();
+            next_node = VIEW_NODE;
+            break;
+        case ENABLE_NODE:
+            break;
+    }
+    recode = aclk_user_login(vty->username, buf, &pri);
+    if (recode) {
+    }
+    if (g_vty_lock) {
+        gettimeofday(&timer_now, NULL);
+        wait_time = timer_now.tv_sec - g_vty_login_failed_time;
+        if (wait_time < g_vty_login_failed_wait_time) {
+            vty_out(vty, "%s user locked, remaining wait time %d minutes, %d seconds!%s",
+                    (g_vty_login_failed_wait_time - wait_time) / 60,
+                    (g_vty_login_failed_wait_time - wait_time) % 60, VTY_NEWLINE);
+            vty->node = LOGIN_NODE;
+        }
+    }
+    vty->privilege = pri;
+    vty->node = next_node;
+
+    return 0;
+}
+
+static int vty_command (struct vty *vty, char *buf)
+{
+    int recode;
+    vector vline;
+
+    vline = cmd_make_strvec(buf);
+    if (NULL == vline) {
+        return 0;
+    }
+
+    recode = cmd_execute_command(vline, vty, NULL);
+    switch(recode) {
+        case CMD_WARNING:
+            ///vty_out (vty, "Warning...%s", VTY_NEWLINE);
+            break;
+        case CMD_ERR_AMBIGUOUS:
+            vty_out (vty, "%% Ambiguous command.%s", VTY_NEWLINE);
+            break;
+        case CMD_ERR_NO_MATCH:
+            vty_out (vty, "%% Unknown command.%s", VTY_NEWLINE);
+            break;
+        case CMD_ERR_INCOMPLETE:
+            vty_out (vty, "%% Command incomplete.%s", VTY_NEWLINE);
+        default:
+            break;
+    }
+    vector_free(vline);
+
+    return 0;
+}
+
 static int vty_execute(struct vty *vty)
 {
 	int recode;
 
 	recode = 0;
 	switch (vty->node) {
+    case LOGIN_NODE:
+        if (strlen(vty->buf) > MAX_NAME_LEN) {
+            vty_out(vty, "Invalid username(too long)%s", VTY_NEWLINE);
+            vty->node = LOGIN_NODE;
+        } else {
+            memset(vty->username, 0x00, MAX_NAME_LEN);
+            strcpy(vty->username, vty->buf);
+            vty->node = AUTH_NODE;
+        }
+        break;
 	case AUTH_NODE:
 	case AUTH_ENABLE_NODE:
-		///vty_auth(vty, vty->buf);
+		vty_auth(vty, vty->buf);
 		break;
 	default:
-        ///ret = vty_command(vty, vty->buf);
+        recode = vty_command(vty, vty->buf);
         vty_hist_add(vty);
         break;
 	}
@@ -1009,7 +1079,7 @@ struct vty *vty_create(int vty_sock, void *addr, int family)
 		vty->node = AUTH_NODE;
     }
 #endif
-    vty->node = VIEW_NODE;
+    vty->node = LOGIN_NODE;
 
 	///vty->fail = 0;
 	vty->cp = 0;
@@ -1106,7 +1176,6 @@ int vty_flush(struct vty *vty)
 	int erase;
 	int dont_more;
 
-    printf("vty status:%d\n", vty->status);
 	if (vty->status == VTY_START || vty->status == VTY_CONTINUE) {
 		if (vty->status == VTY_CONTINUE && vty->output_func) {
 			erase = 1;
@@ -1219,7 +1288,6 @@ int vty_read(struct vty *vty)
     ///}
     ///printf("\n");
 	for (i = 0; i < nbytes; i++) {
-        printf("%02x ", buf[i]);
 		if (buf[i] == IAC) {
 			if (!vty->iac) {
 				vty->iac = 1;
@@ -1247,7 +1315,6 @@ int vty_read(struct vty *vty)
 			continue;
 		}
 
-        printf("start vty more, %d\n", vty->status);
 		if (vty->status == VTY_MORE) {
 			switch (buf[i]) {
 			case CONTROL('C'):

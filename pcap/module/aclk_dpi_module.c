@@ -80,24 +80,24 @@ int aclk_dpi_init(void)
         return -1;
     }
     /// init connect
-    if (aclk_dpi_flow_init_global()) {
-        printf("%s[%d]: flow module init error\n", __func__, __LINE__);
-        return -1;
-    }
+    ///if (aclk_dpi_flow_init_global()) {
+    ///    printf("%s[%d]: flow module init error\n", __func__, __LINE__);
+    ///    return -1;
+    ///}
     
     return 0;
 }
 
 int aclk_dpi_process_packet(void *packet)
 {
-    cvmx_wqe_t *wqe;
-    aclk_dpi_pkt_info_t *pkt;
+    ///cvmx_wqe_t *wqe;
+    ///aclk_dpi_pkt_info_t *pkt;
     
     ///set pide module callback
     ///get packet info
-    wqe = (cvmx_wqe_t *)packet;
-    pkt = (aclk_dpi_pkt_info_t *)(wqe->packet_data);
-    memset(pkt, 0x00, sizeof(aclk_dpi_pkt_info_t));
+    ///wqe = (cvmx_wqe_t *)packet;
+    ///pkt = (aclk_dpi_pkt_info_t *)(wqe->packet_data);
+    ///memset(pkt, 0x00, sizeof(aclk_dpi_pkt_info_t));
    
     /// decap packet
     if (aclk_dpi_decap_process_packet(packet)) {
@@ -106,25 +106,25 @@ int aclk_dpi_process_packet(void *packet)
     }
     
     /// add packet info to session table
-    if (aclk_dpi_flow_process_packet(packet)) {
-        aclk_printf(ACLK_DPI_LOG_LEVEL_WARN, "%s[%d]: connect process packet error\n", __func__, __LINE__);
-        return -1;
-    }
+    //if (aclk_dpi_flow_process_packet(packet)) {
+    //    aclk_printf(ACLK_DPI_LOG_LEVEL_WARN, "%s[%d]: connect process packet error\n", __func__, __LINE__);
+    //    return -1;
+    //}
     
     return 0;
 }
 
 void aclk_dpi_process_packet_over(void *packet)
 {
-#if 0
-    cvmx_wqe_t *wqe;
-    aclk_dpi_pkt_info_t *pkt;
+    ///cvmx_wqe_t *wqe;
+    ///aclk_dpi_pkt_info_t *pkt;
     
     if (NULL == packet) {
         aclk_printf(ACLK_DPI_LOG_LEVEL_WARN, "%s[%d]: invalid packet ptr\n", __func__, __LINE__);
         return ;
     }
 
+#if 0
     ///set pide module callback
     ///get packet info
     wqe = (cvmx_wqe_t *)packet;
@@ -138,7 +138,7 @@ void aclk_dpi_process_packet_over(void *packet)
 
 void aclk_dpi_fini(void)
 {
-    aclk_dpi_flow_fini_global();
+    ///aclk_dpi_flow_fini_global();
     aclk_dpi_decap_fini_global();
 
     return;

@@ -15,18 +15,6 @@
 #include "comm.h"
 
 #define DEFAULT_ZLOG_CONF "/etc/zlog.conf"
-char *default_motd = 
-"\r\n\
-    *******************************************************************\r\n\
-    *   ##     ####    ####   ######  #          #    #    #  #    #  *\r\n\
-    *  #  #   #    #  #    #  #       #          #    ##   #  #   #   *\r\n\
-    * #    #  #       #       #####   #          #    # #  #  ####    *\r\n\
-    * ######  #       #       #       #          #    #  # #  #  #    *\r\n\
-    * #    #  #    #  #    #  #       #          #    #   ##  #   #   *\r\n\
-    * #    #   ####    ####   ######  ######     #    #    #  #    #  *\r\n\
-    *******************************************************************\r\n\
-\r\n";
-
 
 struct event_base *g_master_base_ev = NULL;
 extern void vty_serv_sock_family(unsigned short port, int family);
@@ -52,7 +40,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    vty_serv_sock(2601);
+    comm_init();
 
     event_base_dispatch(g_master_base_ev);
 

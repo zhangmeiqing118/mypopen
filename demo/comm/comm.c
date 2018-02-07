@@ -111,7 +111,7 @@ static void sock_accept_v4(evutil_socket_t sock, short events, __attribute__((un
 
     if (events) {
         zlog_error(g_zlog_comm, "socket accept fd:%d, events:%d", sock, events);
-        printf("socket accept fd:%d, events:%d", sock, events);
+        printf("socket accept fd:%d, events:%d\n", sock, events);
     }
 
     sin_size = sizeof(struct sockaddr_in);
@@ -549,3 +549,13 @@ int vtysh_serv_sock(char *path)
     }
 }
 #endif
+
+int comm_init()
+{
+    printf("cmd init\n");
+    cmd_init(0);
+
+    printf("vty init\n");
+    vty_serv_sock(2601);
+    printf("vty init over\n");
+}

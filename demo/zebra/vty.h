@@ -12,12 +12,27 @@
 extern "C" {
 #endif
 
-#define VTY_MAXHIST 20
-#define VTY_NEWLINE "\r\n"
+#define DEFAULT_MOTD \
+"\r\n\
+    *******************************************************************\r\n\
+    *   ##     ####    ####   ######  #          #    #    #  #    #  *\r\n\
+    *  #  #   #    #  #    #  #       #          #    ##   #  #   #   *\r\n\
+    * #    #  #       #       #####   #          #    # #  #  ####    *\r\n\
+    * ######  #       #       #       #          #    #  # #  #  #    *\r\n\
+    * #    #  #    #  #    #  #       #          #    #   ##  #   #   *\r\n\
+    * #    #   ####    ####   ######  ######     #    #    #  #    #  *\r\n\
+    *******************************************************************\r\n\
+\r\n"
+
+
+#define MAX_NAME_LEN    32
+#define VTY_MAXHIST     20
+#define VTY_NEWLINE     "\r\n"
 
 #define CONTROL(X)  ((X) - '@')
 #define VTY_PRE_ESCAPE      1
 #define VTY_ESCAPE          2
+#define CONTROL_C           0x03
 
 typedef enum {
     VTY_TERM,
@@ -40,12 +55,12 @@ struct vty {
     int node;
     int port;///connect port
     int privilege;   ///Privilege level of the vty
+    vty_status_t status;    ///current vty status
 
     char *address; /// connect ip
     struct buffer *obuf;
     char *buf;
-    char *user_name;
-    vty_status_t status;    ///current vty status
+    char username[MAX_NAME_LEN];
 
     int cp;
     int length;

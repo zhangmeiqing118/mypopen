@@ -11,7 +11,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#if 0
 #if defined(HAVE_IPV6) || defined(HAVE_GETADDRINFO)
 int vty_serv_sock(const char *hostname, unsigned short port);
 #else
@@ -20,7 +20,9 @@ int vty_serv_sock(unsigned short port);
 #ifdef VTYSH
 int vtysh_serv_sock(char *path);
 #endif
+#endif
 
+int comm_init(void);
 #ifdef __cplusplus
 }
 #endif

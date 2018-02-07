@@ -47,8 +47,8 @@ include $(dir)/module.mk
 dir:=$(TOP)/decap
 include $(dir)/decap.mk
 
-dir:=$(TOP)/flow
-include $(dir)/flow.mk
+#dir:=$(TOP)/flow
+#include $(dir)/flow.mk
 
 $(OBJ_DIR):
 	mkdir $(OBJ_DIR)

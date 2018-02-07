@@ -23,6 +23,9 @@
 #ifndef __ZEBRA_COMMAND_H__
 #define __ZEBRA_COMMAND_H__
 
+#ifndef DEFAULT_MOTD
+#define DEFAULT_MOTD    "\r\n"
+#endif
 
 /* Host configuration variable */
 struct host {
@@ -56,6 +59,7 @@ struct host {
 
 /* There are some command levels which called from command node. */
 enum node_type {
+    LOGIN_NODE,
 	AUTH_NODE,		/* Authentication mode of vty interface. */
 	VIEW_NODE,		/* View node. Default mode of vty interface. */
 	AUTH_ENABLE_NODE,	/* Authentication mode for change enable. */
@@ -64,26 +68,17 @@ enum node_type {
     INTERFACE_NODE,     /*Interface node*/
 	DEBUG_NODE,		/* Debug node. */
     BCM_NODE,
-	VTY_NODE		/* Vty node. */
+	VTY_NODE,		/* Vty node. */
+	MAX_NODE		/* Vty node. */
 };
 
-#if 0
 /* Node which has some commands and prompt string and configuration
    function pointer . */
 struct cmd_node {
-	/* Node index. */
 	enum node_type node;
-
-	/* Prompt character at vty interface. */
 	char *prompt;
-
-	/* Is this node's configuration goes to vtysh ? */
 	int vtysh;
-
-	/* Node's configuration write function */
 	int (*func) (struct vty *);
-
-	/* Vector of this node's command list. */
 	vector cmd_vector;
 };
 
@@ -99,24 +94,38 @@ struct cmd_element {
 	vector subconfig;	/* Sub configuration string */
 };
 
+enum {
+    CMD_SUCCESS,
+    CMD_WARNING,
+    CMD_ERR_NO_MATCH,
+    CMD_ERR_AMBIGUOUS,
+    CMD_ERR_INCOMPLETE,
+    CMD_ERR_EXEED_ARGC_MAX,
+    CMD_ERR_NOTHING_TODO,
+    CMD_COMPLETE_FULL_MATCH,
+    CMD_COMPLETE_MATCH,
+    CMD_COMPLETE_LIST_MATCH,
+    CMD_SUCCESS_DAEMON,
+} cmd_errno_t;
+
+#define CMD_OPTION(S)   ((S[0]) == '[')
+#define CMD_VARIABLE(S) (((S[0]) >= 'A' && (S[0]) <= 'Z') || ((S[0]) == '<'))
+#define CMD_VARARG(S)   ((S[0]) == '.')
+#define CMD_RANGE(S)	((S[0] == '<'))
+
+#define CMD_IPV4(S)	   ((strcmp ((S), "A.B.C.D") == 0))
+#define CMD_IPV4_PREFIX(S) ((strcmp ((S), "A.B.C.D/M") == 0))
+#define CMD_IPV6(S)        ((strcmp ((S), "X:X::X:X") == 0))
+#define CMD_IPV6_PREFIX(S) ((strcmp ((S), "X:X::X:X/M") == 0))
+
 /* Command description structure. */
 struct desc {
 	char *cmd;		/* Command string. */
 	char *str;		/* Command's description. */
 };
 
+#if 0
 /* Return value of the commands. */
-#define CMD_SUCCESS              0
-#define CMD_WARNING              1
-#define CMD_ERR_NO_MATCH         2
-#define CMD_ERR_AMBIGUOUS        3
-#define CMD_ERR_INCOMPLETE       4
-#define CMD_ERR_EXEED_ARGC_MAX   5
-#define CMD_ERR_NOTHING_TODO     6
-#define CMD_COMPLETE_FULL_MATCH  7
-#define CMD_COMPLETE_MATCH       8
-#define CMD_COMPLETE_LIST_MATCH  9
-#define CMD_SUCCESS_DAEMON      10
 
 /* Argc max counts. */
 #define CMD_ARGC_MAX   25
@@ -267,5 +276,11 @@ int config_help(struct cmd_element *, struct vty *, int, char **);
 char *host_config_file();
 void host_config_set(char *);
 #endif
+
+vector cmd_make_strvec(char *);
+void cmd_free_strvec(vector);
+
+int cmd_execute_command(vector, struct vty *, struct cmd_element **);
+int cmd_execute_command_strict(vector, struct vty *, struct cmd_element **);
 
 #endif /* _ZEBRA_COMMAND_H */
